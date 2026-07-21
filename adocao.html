@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adotar — Patas Amigas</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1><span>🐾</span> Patas Amigas</h1>
+        <nav>
+            <a href="index.html">Início</a>
+            <a href="adocao.html">Adotar</a>
+            <a href="doacoes.html">Doar</a>
+            <a href="admin.html">Admin</a>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <!-- Listagem de animais -->
+        <div id="secao-listagem">
+            <h2 class="section-title">Animais disponíveis para adoção</h2>
+            <p class="section-subtitle">
+                Clique em "Quero adotar" para iniciar o processo de adoção responsável.
+            </p>
+
+            <div id="lista-animais" class="animais-grid">
+                <p class="loading">Carregando animais... 🐾</p>
+            </div>
+        </div>
+
+        <!-- Formulário de adoção (oculto inicialmente) -->
+        <div id="secao-formulario" style="display:none;">
+            <h2 class="section-title">Solicitação de Adoção</h2>
+            <p class="section-subtitle">
+                Preencha o formulário abaixo. Entraremos em contato para confirmar a adoção.
+            </p>
+
+            <div class="form-card">
+                <div id="info-animal" style="
+                    background:#fff3e0;
+                    border-radius:8px;
+                    padding:14px;
+                    margin-bottom:24px;
+                    font-weight:500;
+                    color:#e65100;">
+                </div>
+
+                <div id="alerta" class="alert"></div>
+
+                <div class="form-group">
+                    <label for="nome">Nome completo *</label>
+                    <input type="text" id="nome" placeholder="Seu nome completo">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail *</label>
+                    <input type="email" id="email" placeholder="seu@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="telefone">Telefone *</label>
+                    <input type="text" id="telefone" placeholder="(00) 00000-0000">
+                </div>
+
+                <div class="form-group">
+                    <label for="endereco">Endereço completo *</label>
+                    <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade">
+                </div>
+
+                <div class="form-group">
+                    <label for="tipoResidencia">Tipo de residência *</label>
+                    <select id="tipoResidencia">
+                        <option value="">Selecione...</option>
+                        <option value="Casa">Casa</option>
+                        <option value="Apartamento">Apartamento</option>
+                        <option value="Chácara">Chácara / Sítio</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temOutrosAnimais">Possui outros animais?</label>
+                    <select id="temOutrosAnimais">
+                        <option value="Não">Não</option>
+                        <option value="Sim, cachorros">Sim, cachorros</option>
+                        <option value="Sim, gatos">Sim, gatos</option>
+                        <option value="Sim, cachorros e gatos">Sim, cachorros e gatos</option>
+                        <option value="Sim, outros">Sim, outros</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="motivoAdocao">Por que você quer adotar? *</label>
+                    <textarea id="motivoAdocao" 
+                        placeholder="Conte um pouco sobre você e por que quer adotar este animal...">
+                    </textarea>
+                </div>
+
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="enviarSolicitacao()">
+                        Enviar solicitação
+                    </button>
+                    <button class="btn btn-outline" onclick="voltarListagem()">
+                        Voltar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>🐾 Patas Amigas — Governador Valadares, MG</p>
+        <p style="margin-top:6px;">Desenvolvido por Lucas Alves Lemes — UNINTER ADS</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script>
+        let animalSelecionadoId = null;
+
+        // Verifica se veio com ?id=X na URL (vindo do index.html)
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            await carregarAnimais();
+
+            if (id) {
+                abrirFormulario(parseInt(id));
+            }
+        }
+
+        async function carregarAnimais() {
+            const lista = document.getElementById('lista-animais');
+
+            try {
+                const animais = await Api.getAnimaisDisponiveis();
+
+                if (animais.length === 0) {
+                    lista.innerHTML = `
+                        <div class="empty-state">
+                            <p>😢 Nenhum animal disponível no momento. Volte em breve!</p>
+                        </div>`;
+                    return;
+                }
+
+                lista.innerHTML = animais.map(animal => `
+                    <div class="animal-card">
+                        <div class="animal-card-img">
+                            ${animal.especie === 'Cachorro' ? '🐶' : '🐱'}
+                        </div>
+                        <div class="animal-card-body">
+                            <span class="badge badge-disponivel">Disponível</span>
+                            <span class="badge badge-${animal.especie.toLowerCase()}">
+                                ${animal.especie}
+                            </span>
+                            <h3>${animal.nome}</h3>
+                            <p>📍 ${animal.cidade} &nbsp;|&nbsp; 📏 Porte ${animal.porte}</p>
+                            <p class="descricao">${animal.descricao}</p>
+                            <button 
+                                class="btn btn-secondary" 
+                                onclick="abrirFormulario(${animal.id})">
+                                Quero adotar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (erro) {
+                lista.innerHTML = `
+                    <div class="empty-state">
+                        <p>⚠️ Não foi possível carregar os animais.</p>
+                    </div>`;
+            }
+        }
+
+        async function abrirFormulario(id) {
+            animalSelecionadoId = id;
+
+            const animal = await Api.getAnimal(id);
+
+            document.getElementById('info-animal').innerHTML = `
+                🐾 Você está solicitando a adoção de: 
+                <strong>${animal.nome}</strong> 
+                (${animal.especie} — Porte ${animal.porte})
+            `;
+
+            document.getElementById('secao-listagem').style.display = 'none';
+            document.getElementById('secao-formulario').style.display = 'block';
+
+            window.scrollTo(0, 0);
+        }
+
+        function voltarListagem() {
+            document.getElementById('secao-formulario').style.display = 'none';
+            document.getElementById('secao-listagem').style.display = 'block';
+            limparAlerta();
+        }
+
+        async function enviarSolicitacao() {
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const endereco = document.getElementById('endereco').value.trim();
+            const tipoResidencia = document.getElementById('tipoResidencia').value;
+            const temOutrosAnimais = document.getElementById('temOutrosAnimais').value;
+            const motivoAdocao = document.getElementById('motivoAdocao').value.trim();
+
+            // Validação básica
+            if (!nome || !email || !telefone || !endereco || !tipoResidencia || !motivoAdocao) {
+                mostrarAlerta('Por favor, preencha todos os campos obrigatórios.', 'error');
+                return;
+            }
+
+            const dados = {
+                nomeSolicitante: nome,
+                email,
+                telefone,
+                endereco,
+                tipoResidencia,
+                temOutrosAnimais,
+                motivoAdocao,
+                animalId: animalSelecionadoId
+            };
+
+            try {
+                const resposta = await Api.postSolicitacao(dados);
+
+                if (resposta.ok) {
+                    mostrarAlerta(
+                        '✅ Solicitação enviada com sucesso! Entraremos em contato em breve.', 
+                        'success'
+                    );
+                    limparFormulario();
+                } else {
+                    const erro = await resposta.text();
+                    mostrarAlerta(`❌ Erro: ${erro}`, 'error');
+                }
+
+            } catch (erro) {
+                mostrarAlerta('⚠️ Não foi possível enviar. Verifique sua conexão.', 'error');
+            }
+        }
+
+        function mostrarAlerta(mensagem, tipo) {
+            const alerta = document.getElementById('alerta');
+            alerta.textContent = mensagem;
+            alerta.className = `alert alert-${tipo}`;
+            alerta.style.display = 'block';
+            alerta.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function limparAlerta() {
+            const alerta = document.getElementById('alerta');
+            alerta.style.display = 'none';
+        }
+
+        function limparFormulario() {
+            ['nome','email','telefone','endereco','motivoAdocao'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('tipoResidencia').value = '';
+        }
+
+        init();
+    </script>
+
+</body>
+</html>

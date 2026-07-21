@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patas Amigas — Adoção e Doação Animal</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1><span>🐾</span> Patas Amigas</h1>
+        <nav>
+            <a href="index.html">Início</a>
+            <a href="adocao.html">Adotar</a>
+            <a href="doacoes.html">Doar</a>
+            <a href="admin.html">Admin</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Todo animal merece um lar com amor 🏠</h2>
+        <p>Encontre seu novo melhor amigo ou ajude com uma doação.</p>
+        <a href="adocao.html" class="btn btn-primary">Ver animais disponíveis</a>
+    </section>
+
+    <div class="container">
+        <h2 class="section-title">Animais esperando por você</h2>
+        <p class="section-subtitle">Conheça alguns dos animais disponíveis para adoção em Governador Valadares.</p>
+
+        <div id="lista-animais" class="animais-grid">
+            <p class="loading">Carregando animais... 🐾</p>
+        </div>
+
+        <div style="text-align:center; margin-top: 32px;">
+            <a href="adocao.html" class="btn btn-outline">Ver todos os animais</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>🐾 Patas Amigas — Governador Valadares, MG</p>
+        <p style="margin-top:6px;">Desenvolvido por Lucas Alves Lemes — UNINTER ADS</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function carregarAnimais() {
+            const lista = document.getElementById('lista-animais');
+
+            try {
+                const animais = await Api.getAnimaisDisponiveis();
+
+                if (animais.length === 0) {
+                    lista.innerHTML = `
+                        <div class="empty-state">
+                            <p>😢 Nenhum animal disponível no momento.</p>
+                        </div>`;
+                    return;
+                }
+
+                // Mostra apenas os 3 primeiros na home
+                const primeiros = animais.slice(0, 3);
+
+                lista.innerHTML = primeiros.map(animal => `
+                    <div class="animal-card">
+                        <div class="animal-card-img">
+                            ${animal.especie === 'Cachorro' ? '🐶' : '🐱'}
+                        </div>
+                        <div class="animal-card-body">
+                            <span class="badge badge-disponivel">Disponível</span>
+                            <span class="badge badge-${animal.especie.toLowerCase()}">
+                                ${animal.especie}
+                            </span>
+                            <h3>${animal.nome}</h3>
+                            <p>📍 ${animal.cidade} &nbsp;|&nbsp; 📏 Porte ${animal.porte}</p>
+                            <p class="descricao">${animal.descricao}</p>
+                            <a href="adocao.html?id=${animal.id}" class="btn btn-secondary">
+                                Quero adotar
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (erro) {
+                lista.innerHTML = `
+                    <div class="empty-state">
+                        <p>⚠️ Não foi possível carregar os animais. Verifique se a API está rodando.</p>
+                    </div>`;
+            }
+        }
+
+        carregarAnimais();
+    </script>
+
+</body>
+</html>

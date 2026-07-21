@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin — Patas Amigas</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Tela de Login -->
+    <div id="tela-login" class="login-container">
+        <div class="login-card">
+            <h2>🐾 Patas Amigas</h2>
+            <p>Acesso administrativo</p>
+
+            <div id="alerta-login" class="alert"></div>
+
+            <div class="form-group">
+                <label for="usuario">Usuário</label>
+                <input type="text" id="usuario" placeholder="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" placeholder="••••••••"
+                    onkeypress="if(event.key==='Enter') fazerLogin()">
+            </div>
+
+            <button class="btn btn-secondary" 
+                style="width:100%;" onclick="fazerLogin()">
+                Entrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Painel Admin (oculto até login) -->
+    <div id="tela-admin" style="display:none;">
+
+        <header>
+            <h1><span>🐾</span> Patas Amigas — Admin</h1>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <span id="nome-usuario" style="color:white; font-size:0.9rem;"></span>
+                <button class="btn btn-outline" 
+                    style="color:white; border-color:white; padding:8px 16px;"
+                    onclick="fazerLogout()">
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+
+            <!-- Cards de resumo -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; margin-bottom:40px;">
+                <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center;">
+                    <p style="color:#666; margin-bottom:8px;">Solicitações pendentes</p>
+                    <h2 id="count-pendentes" style="color:#e65100; font-size:2rem;">-</h2>
+                </div>
+                <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center;">
+                    <p style="color:#666; margin-bottom:8px;">Total arrecadado</p>
+                    <h2 id="count-total" style="color:#2d6a4f; font-size:2rem;">-</h2>
+                </div>
+                <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center;">
+                    <p style="color:#666; margin-bottom:8px;">Doações a confirmar</p>
+                    <h2 id="count-doacoes-pendentes" style="color:#e85d04; font-size:2rem;">-</h2>
+                </div>
+            </div>
+
+            <!-- Abas -->
+            <div class="admin-tabs">
+                <button class="tab-btn ativo" onclick="trocarAba('solicitacoes', this)">
+                    📋 Solicitações
+                </button>
+                <button class="tab-btn" onclick="trocarAba('doacoes', this)">
+                    💛 Doações
+                </button>
+                <button class="tab-btn" onclick="trocarAba('animais', this)">
+                    🐾 Animais
+                </button>
+            </div>
+
+            <!-- Aba Solicitações -->
+            <div id="tab-solicitacoes" class="tab-content ativo">
+                <div id="tabela-solicitacoes">
+                    <p class="loading">Carregando solicitações...</p>
+                </div>
+            </div>
+
+            <!-- Aba Doações -->
+            <div id="tab-doacoes" class="tab-content">
+                <div id="tabela-doacoes">
+                    <p class="loading">Carregando doações...</p>
+                </div>
+            </div>
+
+            <!-- Aba Animais -->
+            <div id="tab-animais" class="tab-content">
+
+                <!-- Formulário de cadastro -->
+                <div class="form-card" style="margin-bottom:32px;">
+                    <h3 style="margin-bottom:20px;">Cadastrar novo animal</h3>
+
+                    <div id="alerta-animal" class="alert"></div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="form-group">
+                            <label>Nome *</label>
+                            <input type="text" id="a-nome" placeholder="Nome do animal">
+                        </div>
+                        <div class="form-group">
+                            <label>Espécie *</label>
+                            <select id="a-especie">
+                                <option value="">Selecione...</option>
+                                <option value="Cachorro">Cachorro</option>
+                                <option value="Gato">Gato</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Porte *</label>
+                            <select id="a-porte">
+                                <option value="">Selecione...</option>
+                                <option value="Pequeno">Pequeno</option>
+                                <option value="Médio">Médio</option>
+                                <option value="Grande">Grande</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cidade *</label>
+                            <input type="text" id="a-cidade" placeholder="Cidade">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descrição *</label>
+                        <textarea id="a-descricao" placeholder="Descrição do animal..."></textarea>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="cadastrarAnimal()">
+                        Cadastrar animal
+                    </button>
+                </div>
+
+                <!-- Lista de todos os animais -->
+                <div id="tabela-animais">
+                    <p class="loading">Carregando animais...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // ===== AUTH =====
+        async function fazerLogin() {
+            const usuario = document.getElementById('usuario').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+
+            if (!usuario || !senha) {
+                mostrarAlertaLogin('Preencha usuário e senha.', 'error');
+                return;
+            }
+
+            try {
+                const res = await Api.login(usuario, senha);
+
+                if (res.ok) {
+                    const dados = await res.json();
+                    salvarToken(dados.token, dados.usuario);
+                    abrirPainel();
+                } else {
+                    mostrarAlertaLogin('Usuário ou senha inválidos.', 'error');
+                }
+            } catch {
+                mostrarAlertaLogin('Erro ao conectar com a API.', 'error');
+            }
+        }
+
+        function fazerLogout() {
+            removerToken();
+            document.getElementById('tela-admin').style.display = 'none';
+            document.getElementById('tela-login').style.display = 'flex';
+        }
+
+        function abrirPainel() {
+            document.getElementById('tela-login').style.display = 'none';
+            document.getElementById('tela-admin').style.display = 'block';
+            document.getElementById('nome-usuario').textContent = 
+                localStorage.getItem('patas_usuario');
+            carregarTudo();
+        }
+
+        function mostrarAlertaLogin(msg, tipo) {
+            const el = document.getElementById('alerta-login');
+            el.textContent = msg;
+            el.className = `alert alert-${tipo}`;
+            el.style.display = 'block';
+        }
+
+        // ===== ABAS =====
+        function trocarAba(aba, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => 
+                t.classList.remove('ativo'));
+            document.querySelectorAll('.tab-btn').forEach(b => 
+                b.classList.remove('ativo'));
+            document.getElementById(`tab-${aba}`).classList.add('ativo');
+            btn.classList.add('ativo');
+        }
+
+        // ===== CARREGAR TUDO =====
+        async function carregarTudo() {
+            await Promise.all([
+                carregarSolicitacoes(),
+                carregarDoacoes(),
+                carregarAnimais()
+            ]);
+        }
+
+        // ===== SOLICITAÇÕES =====
+        async function carregarSolicitacoes() {
+            const container = document.getElementById('tabela-solicitacoes');
+            try {
+                const lista = await Api.getSolicitacoes();
+
+                const pendentes = lista.filter(s => s.status === 'Pendente').length;
+                document.getElementById('count-pendentes').textContent = pendentes;
+
+                if (lista.length === 0) {
+                    container.innerHTML = '<p class="loading">Nenhuma solicitação encontrada.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Solicitante</th>
+                                <th>Animal</th>
+                                <th>Contato</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(s => `
+                                <tr>
+                                    <td>${s.id}</td>
+                                    <td>
+                                        <strong>${s.nomeSolicitante}</strong><br>
+                                        <small>${s.tipoResidencia} — ${s.temOutrosAnimais}</small>
+                                    </td>
+                                    <td>${s.animal?.nome ?? 'N/A'}</td>
+                                    <td>
+                                        ${s.email}<br>
+                                        <small>${s.telefone}</small>
+                                    </td>
+                                    <td>${new Date(s.dataSolicitacao).toLocaleDateString('pt-BR')}</td>
+                                    <td>
+                                        <span class="status-badge status-${s.status.toLowerCase()}">
+                                            ${s.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${s.status === 'Pendente' ? `
+                                            <button class="btn btn-sm btn-success" 
+                                                onclick="atualizarSolicitacao(${s.id}, 'Aprovada')">
+                                                Aprovar
+                                            </button>
+                                            <button class="btn btn-sm btn-danger"
+                                                style="margin-top:4px;"
+                                                onclick="atualizarSolicitacao(${s.id}, 'Recusada')">
+                                                Recusar
+                                            </button>
+                                        ` : '—'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch {
+                container.innerHTML = '<p class="loading">Erro ao carregar solicitações.</p>';
+            }
+        }
+
+        async function atualizarSolicitacao(id, status) {
+            const confirmado = confirm(`Deseja ${status === 'Aprovada' ? 'aprovar' : 'recusar'} esta solicitação?`);
+            if (!confirmado) return;
+
+            const res = await Api.atualizarStatusSolicitacao(id, status);
+            if (res.ok) {
+                await carregarSolicitacoes();
+                await carregarAnimais();
+            }
+        }
+
+        // ===== DOAÇÕES =====
+        async function carregarDoacoes() {
+            const container = document.getElementById('tabela-doacoes');
+            try {
+                const lista = await Api.getDoacoes();
+                const total = await Api.getTotal();
+
+                document.getElementById('count-total').textContent = 
+                    `R$ ${total.totalArrecadado.toFixed(2).replace('.', ',')}`;
+
+                const pendentes = lista.filter(d => d.status === 'Pendente').length;
+                document.getElementById('count-doacoes-pendentes').textContent = pendentes;
+
+                if (lista.length === 0) {
+                    container.innerHTML = '<p class="loading">Nenhuma doação encontrada.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Doador</th>
+                                <th>Valor</th>
+                                <th>Forma</th>
+                                <th>Mensagem</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(d => `
+                                <tr>
+                                    <td>${d.id}</td>
+                                    <td>
+                                        <strong>${d.nomeDoador}</strong><br>
+                                        <small>${d.email}</small>
+                                    </td>
+                                    <td>R$ ${d.valor.toFixed(2).replace('.', ',')}</td>
+                                    <td>${d.formaPagamento}</td>
+                                    <td>${d.mensagem || '—'}</td>
+                                    <td>${new Date(d.dataDoacao).toLocaleDateString('pt-BR')}</td>
+                                    <td>
+                                        <span class="status-badge status-${d.status.toLowerCase()}">
+                                            ${d.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${d.status === 'Pendente' ? `
+                                            <button class="btn btn-sm btn-success"
+                                                onclick="confirmarDoacao(${d.id})">
+                                                Confirmar
+                                            </button>
+                                            <button class="btn btn-sm btn-danger"
+                                                style="margin-top:4px;"
+                                                onclick="cancelarDoacao(${d.id})">
+                                                Cancelar
+                                            </button>
+                                        ` : '—'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch {
+                container.innerHTML = '<p class="loading">Erro ao carregar doações.</p>';
+            }
+        }
+
+        async function confirmarDoacao(id) {
+            if (!confirm('Confirmar esta doação?')) return;
+            const res = await Api.confirmarDoacao(id);
+            if (res.ok) await carregarDoacoes();
+        }
+
+        async function cancelarDoacao(id) {
+            if (!confirm('Cancelar esta doação?')) return;
+            const res = await Api.cancelarDoacao(id);
+            if (res.ok) await carregarDoacoes();
+        }
+
+        // ===== ANIMAIS =====
+        async function carregarAnimais() {
+            const container = document.getElementById('tabela-animais');
+            try {
+                const res = await fetch(`${API_URL}/animais`, {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const lista = await res.json();
+
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nome</th>
+                                <th>Espécie</th>
+                                <th>Porte</th>
+                                <th>Cidade</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(a => `
+                                <tr>
+                                    <td>${a.id}</td>
+                                    <td><strong>${a.nome}</strong></td>
+                                    <td>${a.especie}</td>
+                                    <td>${a.porte}</td>
+                                    <td>${a.cidade}</td>
+                                    <td>
+                                        <span class="status-badge ${a.disponivel ? 'status-aprovada' : 'status-recusada'}">
+                                            ${a.disponivel ? 'Disponível' : 'Adotado'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${a.disponivel ? `
+                                            <button class="btn btn-sm btn-danger"
+                                                onclick="deletarAnimal(${a.id})">
+                                                Remover
+                                            </button>
+                                        ` : '—'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch {
+                container.innerHTML = '<p class="loading">Erro ao carregar animais.</p>';
+            }
+        }
+
+        async function cadastrarAnimal() {
+            const nome = document.getElementById('a-nome').value.trim();
+            const especie = document.getElementById('a-especie').value;
+            const porte = document.getElementById('a-porte').value;
+            const cidade = document.getElementById('a-cidade').value.trim();
+            const descricao = document.getElementById('a-descricao').value.trim();
+
+            if (!nome || !especie || !porte || !cidade || !descricao) {
+                mostrarAlertaAnimal('Preencha todos os campos obrigatórios.', 'error');
+                return;
+            }
+
+            const res = await Api.postAnimal({
+                nome, especie, porte, cidade, descricao,
+                fotoUrl: '', disponivel: true
+            });
+
+            if (res.ok) {
+                mostrarAlertaAnimal('✅ Animal cadastrado com sucesso!', 'success');
+                ['a-nome', 'a-cidade', 'a-descricao'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                document.getElementById('a-especie').value = '';
+                document.getElementById('a-porte').value = '';
+                await carregarAnimais();
+            } else {
+                mostrarAlertaAnimal('❌ Erro ao cadastrar animal.', 'error');
+            }
+        }
+
+        async function deletarAnimal(id) {
+            if (!confirm('Tem certeza que deseja remover este animal permanentemente?')) return;
+            const res = await Api.deleteAnimal(id);
+            if (res.ok) await carregarAnimais();
+        }
+
+        function mostrarAlertaAnimal(msg, tipo) {
+            const el = document.getElementById('alerta-animal');
+            el.textContent = msg;
+            el.className = `alert alert-${tipo}`;
+            el.style.display = 'block';
+        }
+
+        // ===== INIT =====
+        if (estaLogado()) {
+            abrirPainel();
+        }
+    </script>
+
+</body>
+</html>
