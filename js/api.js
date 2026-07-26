@@ -1,4 +1,4 @@
-const API_URL = 'https://localhost:7056/api';
+const API_URL = 'https://patas-amigas-api-production.up.railway.app/api';
 
 const Api = {
     // Auth
